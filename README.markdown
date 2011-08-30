@@ -1,5 +1,5 @@
 #Fixer
-_plugin to make fixed header
+auto-fixed table header maker
 
 ## Usage:
 	fixer(container selector, header selector);
