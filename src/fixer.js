@@ -129,6 +129,8 @@ fixer = (function(global){
 		for(var i = 0, length = containers.length; i < length; i++)
 		{
 			var fixedElement = containers[i].querySelector(fixed);
+			if (fixedElement == null) continue;
+			
 			result.push(new Fixer(containers[i], fixedElement, options));
 		}
 
