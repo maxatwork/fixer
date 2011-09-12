@@ -112,8 +112,6 @@ fixer = (function(global){
 	function getOffsetLeft(elem)
 	{
 		var result = elem.offsetLeft;
-
-		console.log(result);
 		return result;
 	}
 
