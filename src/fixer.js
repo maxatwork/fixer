@@ -23,6 +23,8 @@ fixer = (function(global){
 	{
 		this.container = container;
 		this.fixed = fixed;
+		this.visible = false;
+		this.offsetTop = 0;
 
 		this.settings = {};
 
@@ -33,20 +35,20 @@ fixer = (function(global){
 
 		this.fixedClone = createFixedClone(this.fixed, this.settings.className);
 
-		this.checkSize = checkSize.bind(this);
-		this.checkPosition = checkPosition.bind(this);
+		this.onResize = onResize.bind(this);
+		this.onScroll = onScroll.bind(this);
 
-		addEventListener(global, 'scroll', this.checkPosition, false);
-		addEventListener(global, 'resize', this.checkSize, false);
+		addEventListener(global, 'scroll', this.onScroll);
+		addEventListener(global, 'resize', this.onResize);
 
-		this.checkSize();
-		this.checkPosition();
+		this.onResize();
+		this.onScroll();
 	}
 
 	Fixer.prototype.remove = function()
 	{
-		removeEventListener(global, 'scroll', this.checkPosition, false);
-		removeEventListener(global, 'resize', this.checkSize, false);
+		removeEventListener(global, 'scroll', this.onScroll);
+		removeEventListener(global, 'resize', this.onResize);
 	};
 
 	function createFixedClone(fixed, className)
@@ -63,18 +65,20 @@ fixer = (function(global){
 		return fixedClone;
 	}
 
-	function checkSize()
+	function onResize()
 	{
-		this.fixedClone.style.width = this.fixed.offsetWidth + 'px';
 		this.offsetTop = getOffsetTop(this.container);
+		this.fixedClone.style.width = this.fixed.offsetWidth + 'px';
 		this.maxScrollTop = this.offsetTop + this.container.offsetHeight - this.fixed.offsetHeight;
-		this.checkPosition();
+		
+		this.onScroll();
 	}
 
-	function checkPosition()
+	function onScroll()
 	{
-		var scrollTop = global.document.documentElement.scrollTop ? global.document.documentElement.scrollTop : global.document.body.scrollTop;
-		
+		var scrollTop = global.document.documentElement.scrollTop ? global.document.documentElement.scrollTop : global.document.body.scrollTop,
+			scrollLeft = global.document.documentElement.scrollLeft ? global.document.documentElement.scrollLeft : global.document.body.scrollLeft;
+
 		if(scrollTop > this.offsetTop && scrollTop <= this.maxScrollTop && !this.visible)
 		{
 			this.fixedClone.style.display = this.fixed.style.display;
@@ -91,11 +95,26 @@ fixer = (function(global){
 			this.fixedClone.style.display = 'none';
 			this.visible = false;
 		}
+
+		if (this.visible)
+		{
+			this.offsetLeft = getOffsetLeft(this.fixed);
+			this.fixedClone.style.left = (this.offsetLeft - scrollLeft) + 'px';
+		}
 	}
 
 	function getOffsetTop(elem)
 	{
-		return elem.offsetTop;
+		var result = elem.offsetTop;
+		return result;
+	}
+
+	function getOffsetLeft(elem)
+	{
+		var result = elem.offsetLeft;
+
+		console.log(result);
+		return result;
 	}
 
 	function addEventListener(el, evt, handler)
