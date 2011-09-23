@@ -6,15 +6,12 @@
 
 /**
  * Sticky table headers etc
- * Uses Element.querySelector (if found)
- * or Sizzle (if found)
- * or getElementsByClassName
  *
- * @param container Container selector
- * @param fixed Fixed element selector
+ * @param container Container element
+ * @param fixed Fixed element
  * @param options Options
  */
-var fixer = (function(global, sizzle)
+var Fixer = (function(global, sizzle)
 {
 
 	"use strict";
@@ -153,23 +150,6 @@ var fixer = (function(global, sizzle)
 		}
 	}
 
-	function querySelectorAll(root, selector)
-	{
-		if (root.querySelectorAll) return root.querySelectorAll(selector);
-		if (sizzle != null) return sizzle(selector, root);
-		if (root.getElementsByClassName) return root.getElementsByClassName(selector);
-
-		return [];
-	}
-
-	function querySelector(root, selector)
-	{
-		var results = querySelectorAll(root, selector);
-		if (results.length > 0) return results[0];
-
-		return null;
-	}
-
 	function bind(fToBind, oThis)
 	{
 		if (typeof fToBind.bind != 'undefined')
@@ -195,27 +175,6 @@ var fixer = (function(global, sizzle)
 		return fBound;
 	}
 
-	return function(container, fixed, options)
-	{
-		var containers = querySelectorAll(global.document, container),
-				result = [];
+	return Fixer;
 
-		for (var i = 0, length = containers.length; i < length; i++)
-		{
-			var fixedElement = querySelector(containers[i], fixed);
-			if (fixedElement == null) continue;
-
-			result.push(new Fixer(containers[i], fixedElement, options));
-		}
-
-		result.remove = function()
-		{
-			for (var i = 0; i < result.length; i++)
-			{
-				result[i].remove();
-			}
-		};
-
-		return result;
-	};
 })(this, typeof Sizzle == 'undefined' ? null : Sizzle);
