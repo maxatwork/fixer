@@ -69,7 +69,7 @@
 		</style>
 	</head>
 
-	<body onload="fixer('.b-container, table', '.b-header, thead tr');">
+	<body onload="onLoad();">
 		<h1>Sticky headers</h1>
 
 		<h2>Table</h2>
@@ -1269,6 +1269,20 @@
 		</div>
 	</body>
 
-	<!--[if lt IE 8 ]><script src="sizzle.js"></script><![endif]-->
+	<script src="sizzle.js"></script>
 	<script src="../src/fixer.js"></script>
+	<script>
+		function onLoad()
+		{
+			var containers = Sizzle(".b-container, table");
+			for(var i = 0; i < containers.length; i++)
+			{
+				var heads = Sizzle('.b-header, thead tr', containers[i]);
+				if (heads != null && heads.length > 0)
+				{
+					new Fixer(containers[i], heads[0]);
+				}
+			}
+		}
+	</script>
 </html>
