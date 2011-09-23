@@ -20,16 +20,13 @@
 			.b-container {
 				background: white;
 				width: 50%;
-				margin: 5em 40% 5em 10%;
+				margin: 0 40% 10em 10%;
 				display: block;
-			}
-
-			.b-container {
-
 			}
 
 			.b-row, .b-header {
 				display: block;
+				overflow: hidden;
 			}
 
 			.fixed {
@@ -48,9 +45,13 @@
 			}
 
 			.b-cell {
-				display: inline-block;
+				float: left;
 				padding: .5em;
 				width: 20%;
+			}
+
+			table {
+				margin-bottom: 10em;
 			}
 
 			tr.fixed {
@@ -69,6 +70,10 @@
 	</head>
 
 	<body onload="fixer('.b-container, table', '.b-header, thead tr');">
+		<h1>Sticky headers</h1>
+
+		<h2>Table</h2>
+		<p>Doesn't work in IE7</p>
 		<table>
 			<thead>
 				<tr>
@@ -485,6 +490,7 @@
 			</tbody>
 		</table>
 
+		<h2>Divs with fixed width</h2>
 		<div class="b-container left" style="width: 900px;">
 			<div class="b-header">
 				<div class="b-cell">Cell 1</div>
@@ -873,6 +879,7 @@
 			</div>
 		</div>
 
+		<h2>Divs with percent width</h2>
 		<div class="b-container right">
 			<div class="b-header">
 				<div class="b-cell">Cell 1.1</div>
@@ -1262,5 +1269,6 @@
 		</div>
 	</body>
 
+	<!--[if lt IE 8 ]><script src="sizzle.js"></script><![endif]-->
 	<script src="../src/fixer.js"></script>
 </html>

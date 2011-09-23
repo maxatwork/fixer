@@ -5,13 +5,17 @@
  */
 
 /**
- * Fixes table headers etc on top of browser window if scrolled out.
- * 
- * @param container Container selector (i.e. 'table')
- * @param fixed Fixed element selector (i.e. 'thead tr')
- * @param options Options (now className is only option)
+ * Sticky table headers etc
+ * Uses Element.querySelector (if found)
+ * or Sizzle (if found)
+ * or getElementsByClassName
+ *
+ * @param container Container selector
+ * @param fixed Fixed element selector
+ * @param options Options
  */
-fixer = (function(global){
+var fixer = (function(global, sizzle)
+{
 
 	"use strict";
 
@@ -28,15 +32,15 @@ fixer = (function(global){
 
 		this.settings = {};
 
-		for(var key in defaults)
+		for (var key in defaults)
 		{
 			this.settings[key] = options && typeof options[key] != 'undefined' ? options[key] : defaults[key];
 		}
 
 		this.fixedClone = createFixedClone(this.fixed, this.settings.className);
 
-		this.onResize = onResize.bind(this);
-		this.onScroll = onScroll.bind(this);
+		this.onResize = bind(onResize, this);
+		this.onScroll = bind(onScroll, this);
 
 		addEventListener(global, 'scroll', this.onScroll);
 		addEventListener(global, 'resize', this.onResize);
@@ -70,17 +74,18 @@ fixer = (function(global){
 		this.offsetTop = getOffsetTop(this.container);
 		this.fixedClone.style.width = this.fixed.offsetWidth + 'px';
 		this.maxScrollTop = this.offsetTop + this.container.offsetHeight - this.fixed.offsetHeight;
-		
+
 		this.onScroll();
 	}
 
 	function onScroll()
 	{
 		var scrollTop = global.document.documentElement.scrollTop ? global.document.documentElement.scrollTop : global.document.body.scrollTop,
-			scrollLeft = global.document.documentElement.scrollLeft ? global.document.documentElement.scrollLeft : global.document.body.scrollLeft;
+				scrollLeft = global.document.documentElement.scrollLeft ? global.document.documentElement.scrollLeft : global.document.body.scrollLeft;
 
-		if(scrollTop > this.offsetTop && scrollTop <= this.maxScrollTop && !this.visible)
+		if (scrollTop > this.offsetTop && scrollTop <= this.maxScrollTop)
 		{
+			this.fixedClone.style.top = '0px';
 			this.fixedClone.style.display = this.fixed.style.display;
 			if (this.fixedClone.style.zIndex) this.fixedClone.style.zIndex = this.fixed.zIndex + 1;
 			this.visible = true;
@@ -90,10 +95,9 @@ fixer = (function(global){
 			this.fixedClone.style.display = 'none';
 			this.visible = false;
 		}
-		else if (scrollTop > this.maxScrollTop && this.visible)
+		else if (scrollTop > this.maxScrollTop)
 		{
-			this.fixedClone.style.display = 'none';
-			this.visible = false;
+			this.fixedClone.style.top = (this.maxScrollTop - scrollTop) + 'px';
 		}
 
 		if (this.visible)
@@ -105,13 +109,23 @@ fixer = (function(global){
 
 	function getOffsetTop(elem)
 	{
-		var result = elem.offsetTop;
+		var result = 0;
+
+		do {
+			result += elem.offsetTop;
+		} while (elem = elem.offsetParent);
+
 		return result;
 	}
 
 	function getOffsetLeft(elem)
 	{
-		var result = elem.offsetLeft;
+		var result = 0;
+
+		do {
+			result += elem.offsetLeft;
+		} while (elem = elem.offsetParent);
+
 		return result;
 	}
 
@@ -139,20 +153,64 @@ fixer = (function(global){
 		}
 	}
 
-	return function(container, fixed, options) {
-		var containers = global.document.querySelectorAll(container),
-			result = [];
+	function querySelectorAll(root, selector)
+	{
+		if (root.querySelectorAll) return root.querySelectorAll(selector);
+		if (sizzle != null) return sizzle(selector, root);
+		if (root.getElementsByClassName) return root.getElementsByClassName(selector);
 
-		for(var i = 0, length = containers.length; i < length; i++)
+		return [];
+	}
+
+	function querySelector(root, selector)
+	{
+		var results = querySelectorAll(root, selector);
+		if (results.length > 0) return results[0];
+
+		return null;
+	}
+
+	function bind(fToBind, oThis)
+	{
+		if (typeof fToBind.bind != 'undefined')
 		{
-			var fixedElement = containers[i].querySelector(fixed);
+			return fToBind.bind.apply(fToBind, Array.prototype.slice.call(arguments, 1));
+		}
+
+		if (typeof fToBind !== "function") // closest thing possible to the ECMAScript 5 internal IsCallable function
+		{
+			throw new TypeError("Function.prototype.bind - what is trying to be fBound is not callable");
+		}
+
+		var aArgs = Array.prototype.slice.call(arguments, 2),
+				fNOP = function () {},
+				fBound = function ()
+				{
+					return fToBind.apply(this instanceof fNOP ? this : oThis || window, aArgs.concat(Array.prototype.slice.call(arguments)));
+				};
+
+		fNOP.prototype = fToBind.prototype;
+		fBound.prototype = new fNOP();
+
+		return fBound;
+	}
+
+	return function(container, fixed, options)
+	{
+		var containers = querySelectorAll(global.document, container),
+				result = [];
+
+		for (var i = 0, length = containers.length; i < length; i++)
+		{
+			var fixedElement = querySelector(containers[i], fixed);
 			if (fixedElement == null) continue;
-			
+
 			result.push(new Fixer(containers[i], fixedElement, options));
 		}
 
-		result.remove = function() {
-			for(var i = 0; i < result.length; i++)
+		result.remove = function()
+		{
+			for (var i = 0; i < result.length; i++)
 			{
 				result[i].remove();
 			}
@@ -160,29 +218,4 @@ fixer = (function(global){
 
 		return result;
 	};
-})(this);
-
-/* Compatibility part, IE8 support */
-
-if (!Function.prototype.bind) {
-
-  Function.prototype.bind = function (oThis) {
-
-    if (typeof this !== "function") // closest thing possible to the ECMAScript 5 internal IsCallable function
-      throw new TypeError("Function.prototype.bind - what is trying to be fBound is not callable");
-
-    var aArgs = Array.prototype.slice.call(arguments, 1),
-        fToBind = this,
-        fNOP = function () {},
-        fBound = function () {
-          return fToBind.apply(this instanceof fNOP ? this : oThis || window, aArgs.concat(Array.prototype.slice.call(arguments)));
-        };
-
-    fNOP.prototype = this.prototype;
-    fBound.prototype = new fNOP();
-
-    return fBound;
-
-  };
-
-}
+})(this, typeof Sizzle == 'undefined' ? null : Sizzle);
